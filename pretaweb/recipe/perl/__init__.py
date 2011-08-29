@@ -4,6 +4,8 @@
 
 from hexagonit.recipe.cmmi import Recipe as RecipeCMMI
 import os.path
+import subprocess
+
 class PerlRecipe(object):
     """zc.buildout recipe"""
 
@@ -15,13 +17,34 @@ class PerlRecipe(object):
         options["interpreter"] = os.path.join(buildoutDir, "parts", name, "bin/perl")
         options["keep-compile-dir"] = options.get("keep-compile-dir", "false")
         options["configure-command"] = """sh Configure \
-                    -Dprefix=${buildout:directory}/parts/${:_buildout_section_name_} \
+                    -Dprefix=%(buildoutDir)s/parts/%(name)s \
                     -Dlibs='-ldl -lm -lpthread -lc -lcrypt' \
-                    -des """
+                    -des """ % locals()
+        options["cpan"] = options.get ("cpan", "")
 
 
     def perl_cmmi(self):
         return RecipeCMMI (self.buildout, self.name, self.options)
+
+
+    def installModules(self):
+
+        modules = self.options["cpan"]
+
+        cpanpBin = os.path.join(self["location"], "bin/cpanp")
+        cpanEnv = os.environ.copy()
+        cpanEnv["HOME"] = self["location"]
+
+        for m in modules.split ("\n"):
+            cpanProc = subprocess.Popen (
+                    (options["interpreter"], cpanpBin, "-i", m, "--skiptest", "--force"),
+                    env=cpanEnv,
+                    stdin=subprocess.PIPE )
+            cpanProc.stdin.write("\n"*100)
+            cpanProc.stdin.close()
+            ret = cpanProc.wait()
+            if ret != 0:
+                raise Exception ("Was not able to install CPAM module '%s'. cpanp returned status code %s" % (m, ret))
 
 
     def install(self):
@@ -29,7 +52,11 @@ class PerlRecipe(object):
 
         perl_cmmi = self.perl_cmmi()
 
-        return tuple(cmmi.install())
+        files = perl_cmmi.install()
+        self.install_modules()
+
+        return tuple(files)
+
 
     def update(self):
         """Updater"""
