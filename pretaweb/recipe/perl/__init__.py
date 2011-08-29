@@ -27,24 +27,26 @@ class PerlRecipe(object):
         return RecipeCMMI (self.buildout, self.name, self.options)
 
 
-    def installModules(self):
+    def install_modules(self):
+        options = self.options
 
-        modules = self.options["cpan"]
+        modules = options["cpan"]
 
-        cpanpBin = os.path.join(self["location"], "bin/cpanp")
+        cpanpBin = os.path.join(options["location"], "bin/cpanp")
         cpanEnv = os.environ.copy()
-        cpanEnv["HOME"] = self["location"]
+        cpanEnv["HOME"] = options["location"]
 
         for m in modules.split ("\n"):
-            cpanProc = subprocess.Popen (
-                    (options["interpreter"], cpanpBin, "-i", m, "--skiptest", "--force"),
-                    env=cpanEnv,
-                    stdin=subprocess.PIPE )
-            cpanProc.stdin.write("\n"*100)
-            cpanProc.stdin.close()
-            ret = cpanProc.wait()
-            if ret != 0:
-                raise Exception ("Was not able to install CPAM module '%s'. cpanp returned status code %s" % (m, ret))
+            if len(m) > 0:
+                cpanProc = subprocess.Popen (
+                        (options["interpreter"], cpanpBin, "-i", m, "--skiptest", "--force"),
+                        env=cpanEnv,
+                        stdin=subprocess.PIPE )
+                cpanProc.stdin.write("\n"*100)
+                cpanProc.stdin.close()
+                ret = cpanProc.wait()
+                if ret != 0:
+                    raise Exception ("Was not able to install CPAM module '%s'. cpanp returned status code %s" % (m, ret))
 
 
     def install(self):
