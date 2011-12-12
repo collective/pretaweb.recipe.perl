@@ -12,15 +12,19 @@ class PerlRecipe(object):
     def __init__(self, buildout, name, options):
         self.buildout, self.name, self.options = buildout, name, options
 
+        options["url"] = options.get("url", self.default_perl_url())
         buildoutDir = buildout["buildout"]["directory"]
-        options["location"] = os.path.join (buildoutDir, name)
+        location = options.get("prefix", os.path.join (buildoutDir, "parts", name))
+        options["location"] = location
         options["interpreter"] = os.path.join(buildoutDir, "parts", name, "bin/perl")
-        options["keep-compile-dir"] = options.get("keep-compile-dir", "false")
         options["configure-command"] = """sh Configure \
-                    -Dprefix=%(buildoutDir)s/parts/%(name)s \
+                    -Dprefix=%(location)s \
                     -Dlibs='-ldl -lm -lpthread -lc -lcrypt' \
                     -des """ % locals()
         options["cpan"] = options.get ("cpan", "")
+
+    def default_perl_url (self):
+        return "http://www.cpan.org/src/perl-5.12.3.tar.gz"
 
 
     def perl_cmmi(self):
