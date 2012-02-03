@@ -43,7 +43,7 @@ class PerlRecipe(object):
         for m in modules.split ("\n"):
             if len(m) > 0:
                 cpanProc = subprocess.Popen (
-                        (options["interpreter"], cpanpBin, "-i", m, "--skiptest", "--force"),
+                        (options["interpreter"], cpanpBin, 's conf prereqs 1; i ' + m, "--skiptest", "--force"),
                         env=cpanEnv,
                         stdin=subprocess.PIPE )
                 cpanProc.stdin.write("\n"*100)
